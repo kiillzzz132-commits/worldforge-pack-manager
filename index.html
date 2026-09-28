@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080a0f">
+  <meta name="description" content="WorldForge Resource Pack Merger — merge two complete Minecraft resource packs locally in your browser.">
+  <title>WorldForge Resource Merger</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+  <div class="grid"></div>
+
+  <header class="nav">
+    <a class="brand" href="#merge" aria-label="WorldForge Resource Merger">
+      <span class="brand-mark">W</span>
+      <span><b>WORLD<span>FORGE</span></b><small>RESOURCE MERGER</small></span>
+    </a>
+    <nav>
+      <button class="nav-link active" data-view="merge">Merge</button>
+      <button class="nav-link" data-view="releases">Downloads</button>
+      <button class="nav-link" data-view="about">About</button>
+    </nav>
+    <div class="local-pill"><i></i><span>Runs locally</span></div>
+  </header>
+
+  <main>
+    <section class="view active" id="view-merge">
+      <div class="hero">
+        <div class="hero-kicker"><span></span> WORLDFORGE TOOLING</div>
+        <h1>Merge resource packs.<br><em>Keep everything.</em></h1>
+        <p>Drop in two complete Minecraft resource packs. WorldForge compares them, intelligently merges Minecraft registry JSON, lets you resolve real conflicts, validates the result, and calculates the exact SHA-1.</p>
+        <div class="hero-trust">
+          <span>◈ Files stay on your computer</span>
+          <span>◈ No upload-size limit from a server</span>
+          <span>◈ ZIP64-ready for huge packs</span>
+        </div>
+      </div>
+
+      <section class="glass merge-card" id="selectStage">
+        <div class="section-title">
+          <div><span class="num">01</span><div><h2>Select complete packs</h2><p>The newer pack has priority where a safe smart merge is not possible.</p></div></div>
+          <button class="text-btn" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="pack-picker">
+          <label class="drop" id="oldDrop">
+            <input type="file" id="oldFile" accept=".zip,application/zip" hidden>
+            <div class="drop-top"><span class="pack-index">A</span><span class="badge old">OLDER</span></div>
+            <div class="upload-icon">↓</div>
+            <h3>Older complete pack</h3>
+            <p>Drag the full previous resource pack here</p>
+            <div class="file-chip" id="oldMeta"><span>No ZIP selected</span></div>
+          </label>
+
+          <div class="merge-symbol"><span>+</span></div>
+
+          <label class="drop" id="newDrop">
+            <input type="file" id="newFile" accept=".zip,application/zip" hidden>
+            <div class="drop-top"><span class="pack-index">B</span><span class="badge new">NEWER</span></div>
+            <div class="upload-icon">↑</div>
+            <h3>Newer complete pack</h3>
+            <p>Drag the full latest resource pack here</p>
+            <div class="file-chip" id="newMeta"><span>No ZIP selected</span></div>
+          </label>
+        </div>
+
+        <div class="privacy-note">
+          <strong>Nothing is uploaded.</strong>
+          Both ZIPs are read directly by your browser. This is why the merger can handle much larger packs without paying for server storage or upload bandwidth.
+        </div>
+
+        <button class="primary full" id="analyzeBtn" disabled>
+          <span>Analyze both packs</span><b>→</b>
+        </button>
+      </section>
+
+      <section class="glass hidden" id="workingStage">
+        <div class="working-head">
+          <div class="spinner"></div>
+          <div><h2 id="workingTitle">Reading pack indexes…</h2><p id="workingDetail">Nothing is being uploaded.</p></div>
+          <strong id="workingPercent">0%</strong>
+        </div>
+        <div class="progress"><i id="progressBar"></i></div>
+        <div class="phase-grid">
+          <div class="phase active" data-phase="read"><i></i><span>Read ZIPs</span></div>
+          <div class="phase" data-phase="compare"><i></i><span>Compare</span></div>
+          <div class="phase" data-phase="merge"><i></i><span>Smart merge</span></div>
+          <div class="phase" data-phase="validate"><i></i><span>Validate</span></div>
+          <div class="phase" data-phase="hash"><i></i><span>SHA-1</span></div>
+        </div>
+      </section>
+
+      <section class="glass hidden" id="reviewStage">
+        <div class="section-title">
+          <div><span class="num">02</span><div><h2>Review merge</h2><p>Smart-merge files are combined automatically. True conflicts default to the newer pack.</p></div></div>
+          <span class="safe-pill">Minecraft-aware</span>
+        </div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="smart-callout">
+          <div class="spark">✦</div>
+          <div><strong>Smart merge is active</strong><p>Fonts, sounds, language JSON, atlases, tags and <code>pack.mcmeta</code> are combined instead of blindly overwritten.</p></div>
+        </div>
+
+        <div class="conflict-block hidden" id="conflictBlock">
+          <div class="subhead"><div><h3>True file conflicts</h3><p>Choose which copy should survive for each changed file.</p></div><span id="conflictCount"></span></div>
+          <div class="conflicts" id="conflicts"></div>
+        </div>
+
+        <div class="build-options">
+          <label class="toggle-row">
+            <div><strong>Large Pack Mode</strong><span>Chrome/Edge only — writes the result directly to disk to use far less memory.</span></div>
+            <input type="checkbox" id="largeMode">
+            <span class="toggle"></span>
+          </label>
+          <div class="browser-hint hidden" id="largeModeHint">Your browser does not support direct-to-disk saving. Standard mode will be used.</div>
+        </div>
+
+        <button class="primary full" id="buildBtn"><span>Build merged resource pack</span><b>→</b></button>
+      </section>
+
+      <section class="glass result hidden" id="resultStage">
+        <div class="result-icon">✓</div>
+        <div class="hero-kicker centered"><span></span> MERGE COMPLETE <span></span></div>
+        <h2 id="resultName">WorldForge-Merged.zip</h2>
+        <p id="resultSummary">Validated and ready for Minecraft.</p>
+
+        <div class="result-grid">
+          <div class="result-box">
+            <label>SHA-1</label>
+            <div class="mono-copy"><input id="shaOut" readonly><button data-copy="shaOut">Copy</button></div>
+          </div>
+          <div class="result-box">
+            <label>File size</label>
+            <div class="big-value" id="sizeOut">—</div>
+          </div>
+        </div>
+
+        <div class="result-box properties">
+          <label>server.properties</label>
+          <div class="code-copy"><pre id="propertiesOut"></pre><button data-copy-text="propertiesOut">Copy</button></div>
+          <small>Add a permanent release URL after publishing this ZIP as an official version.</small>
+        </div>
+
+        <div class="result-actions">
+          <button class="primary" id="downloadResult">Download merged ZIP</button>
+          <button class="secondary" id="downloadReport">Download merge report</button>
+          <button class="secondary" id="copyReleaseNotes">Copy release notes</button>
+        </div>
+
+        <div class="success-strip">
+          <span>✓ ZIP root validated</span><span>✓ JSON validated</span><span>✓ SHA-1 calculated</span><span>✓ No server upload</span>
+        </div>
+      </section>
+
+      <div class="error-toast hidden" id="errorToast"><strong>Merge stopped</strong><span id="errorText"></span><button id="closeError">×</button></div>
+    </section>
+
+    <section class="view" id="view-releases">
+      <div class="page-head">
+        <div class="hero-kicker"><span></span> OFFICIAL DOWNLOADS</div>
+        <h1>WorldForge pack releases</h1>
+        <p>Download the newest pack or go back to any previous published version.</p>
+      </div>
+
+      <section class="latest-card glass" id="latestRelease">
+        <div class="release-loading">Loading official releases…</div>
+      </section>
+
+      <div class="release-toolbar">
+        <div><h2>Version history</h2><p>Every published pack stays available.</p></div>
+        <button class="secondary" id="refreshReleases">Refresh</button>
+      </div>
+      <div class="release-list" id="releaseList"></div>
+      <div class="release-empty glass hidden" id="releaseEmpty">
+        <div>◇</div><h3>No official releases yet</h3><p>Once the first WorldForge pack is published on GitHub Releases, it will automatically appear here.</p>
+      </div>
+    </section>
+
+    <section class="view" id="view-about">
+      <div class="page-head">
+        <div class="hero-kicker"><span></span> HOW IT WORKS</div>
+        <h1>Built for giant packs.</h1>
+        <p>The merger is intentionally serverless: your resource packs never need to be uploaded to a web server before they can be combined.</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="glass"><span>01</span><h3>Local processing</h3><p>The browser reads both ZIPs on your computer. There is no cloud upload step and therefore no web-host upload-size bottleneck.</p></article>
+        <article class="glass"><span>02</span><h3>Compressed copying</h3><p>Unchanged archive entries are copied in pass-through mode when possible. Only merge-sensitive files need to be opened and processed.</p></article>
+        <article class="glass"><span>03</span><h3>Minecraft-aware JSON</h3><p>Font providers, sound registries, translations, atlases and tags preserve entries from both packs instead of losing one side.</p></article>
+        <article class="glass"><span>04</span><h3>Permanent releases</h3><p>Official versions are stored as GitHub Release assets, separate from the website itself, so old downloads remain available.</p></article>
+        <article class="glass"><span>05</span><h3>Exact SHA-1</h3><p>The finished file is hashed locally and produces the exact SHA-1 Minecraft expects for <code>resource-pack-sha1</code>.</p></article>
+        <article class="glass"><span>06</span><h3>Privacy by design</h3><p>The merger needs no accounts, cookies, database or uploaded copies of visitors' resource packs.</p></article>
+      </div>
+
+      <section class="glass limitations">
+        <h2>Large Pack Mode</h2>
+        <p>For especially large packs, Chromium browsers can write the merged ZIP directly to disk instead of holding the entire finished archive in browser memory. Standard mode remains available everywhere else.</p>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand footer-brand"><span class="brand-mark">W</span><span><b>WORLD<span>FORGE</span></b><small>RESOURCE MERGER</small></span></div>
+    <p>Free static site • Local browser processing • Permanent version archive</p>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
