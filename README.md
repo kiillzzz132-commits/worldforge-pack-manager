@@ -1,46 +1,68 @@
-# WorldForge Pack Manager
+# WorldForge Resource Merger
 
-Minecraft-aware web tool that accepts **two complete resource-pack ZIPs** and produces one merged pack.
+A free, browser-native Minecraft resource-pack merger.
 
-## Features
-- Upload an older complete pack and a newer complete pack
-- Safe ZIP extraction and corrupt-archive detection
-- Smart merging for fonts, sounds, language files, atlases, tags and `pack.mcmeta`
-- Conflict review with **Use NEW / Keep OLD**
-- Finished-pack validation
-- Automatic SHA-1 generation
-- Ready-to-paste `server.properties`
-- Downloadable merged ZIP
-- Optional Cloudflare R2 publishing for durable public URLs
-- Railway-ready Docker deployment
+## What it does
 
-## Deploy on Railway
-1. Create a Railway project and choose **Deploy from GitHub repo**.
-2. Select this repository.
-3. Railway uses `Dockerfile` and `railway.json`.
-4. Generate a public domain in Networking.
-5. Open `/health` and confirm it returns `{"ok": true}`.
+- Accepts **two complete resource-pack ZIPs**
+- Reads and merges them **locally in the browser**
+- Preserves files found only in the older pack
+- Adds files found only in the newer pack
+- Detects unchanged files by ZIP metadata
+- Smart-merges Minecraft JSON where appropriate:
+  - font providers
+  - sounds
+  - language JSON
+  - atlases
+  - tags
+  - `pack.mcmeta`
+- Lets the user choose **NEW** or **OLD** for true conflicts
+- Supports ZIP64
+- Uses compressed pass-through copying when possible for speed
+- Includes optional **Large Pack Mode** on Chromium browsers to write directly to disk
+- Calculates Minecraft's exact SHA-1 locally
+- Creates a downloadable merge report
+- Shows official release history from GitHub Releases
 
-Railway injects `PORT`; this app automatically listens on `0.0.0.0:$PORT` when hosted.
+## Free architecture
 
-## Optional Cloudflare R2 publishing
-Set these Railway variables:
-- `R2_ENDPOINT_URL`
-- `R2_ACCESS_KEY_ID`
-- `R2_SECRET_ACCESS_KEY`
-- `R2_BUCKET`
-- `R2_PUBLIC_BASE_URL`
+The live website is intended for **Cloudflare Pages**. It is a static site, so it does not need a paid application server.
 
-When all five are present, hosted builds publish to R2 automatically.
+The actual pack merging happens on the visitor's device. The resource-pack ZIPs are never uploaded to Cloudflare.
 
-## Local development
-```bash
-python app.py
-```
+Official downloadable versions are stored as **GitHub Release assets** rather than as website files.
 
-Run tests:
-```bash
-python -m unittest discover -s tests -v
-```
+## Cloudflare Pages deployment
 
-Without R2, generated ZIPs/history are stored on the web-service filesystem and can disappear on redeploy/restart. Configure R2 for durable public downloads.
+Use these settings when connecting this repository:
+
+- Production branch: `main`
+- Framework preset: **None**
+- Build command: `exit 0`
+- Build output directory: `.`
+
+The project receives a free `*.pages.dev` address after deployment.
+
+## Publishing an official pack version
+
+1. Merge the two complete packs on the website.
+2. Download/save the merged ZIP.
+3. Use **Copy release notes** on the result screen.
+4. In GitHub open **Releases → Draft a new release**.
+5. Create a tag such as `v1`, `v2`, or `v3`.
+6. Upload the merged ZIP as the release asset.
+7. Paste the generated release notes.
+8. Publish the release.
+
+The website's **Downloads** tab automatically reads published releases and shows the latest pack plus all previous versions.
+
+> The repository must be public for anonymous visitors to download public GitHub Release assets and for the website to query the release list without a private token.
+
+## Libraries
+
+The static app uses:
+
+- `@zip.js/zip.js` 2.18.2 for ZIP/ZIP64 processing
+- `hash-wasm` 4.12.0 for streaming SHA-1
+
+No application-server runtime is required.
