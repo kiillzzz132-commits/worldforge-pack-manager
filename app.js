@@ -428,6 +428,36 @@ function shaFromBody(body=""){
 function notesPreview(body=""){
   return body.replace(/[#>*_`]/g,"").replace(/\s+/g," ").trim().slice(0,240);
 }
+function serverPropertiesFor(assetUrl,sha){
+  return `resource-pack=${assetUrl}\nresource-pack-sha1=${sha}\nresource-pack-required=true`;
+}
+function copyButton(label,value,disabled=false){
+  if(disabled) return `<button class="release-copy disabled" type="button" disabled title="SHA-1 was not found in this release's notes">${label}</button>`;
+  return `<button class="release-copy" type="button" data-copy-value="${encodeURIComponent(value)}">${label}</button>`;
+}
+function releaseActionsHtml(asset,sha,latest=false){
+  if(!asset) return '<span class="secondary">No ZIP asset</span>';
+  const url=asset.browser_download_url;
+  const props=sha?serverPropertiesFor(url,sha):"";
+  return `<div class="release-button-group">
+    <a class="${latest?"primary download-main":"release-download"}" href="${url}">${latest?"Download latest ↓":"Download"}</a>
+    ${copyButton("Copy Direct URL",url)}
+    ${copyButton("Copy SHA-1",sha,!sha)}
+    ${copyButton("Copy server.properties",props,!sha)}
+  </div>`;
+}
+document.addEventListener("click",async e=>{
+  const btn=e.target.closest(".release-copy[data-copy-value]");
+  if(!btn)return;
+  try{
+    await navigator.clipboard.writeText(decodeURIComponent(btn.dataset.copyValue));
+    const old=btn.textContent;
+    btn.textContent="Copied ✓";
+    setTimeout(()=>btn.textContent=old,1100);
+  }catch{
+    showError("Your browser blocked clipboard access. Try again after clicking directly on the page.");
+  }
+});
 async function loadReleases(){
   const latest=$("#latestRelease"),list=$("#releaseList"),empty=$("#releaseEmpty");
   latest.innerHTML='<div class="release-loading">Loading official releases…</div>';list.innerHTML="";empty.classList.add("hidden");
@@ -438,10 +468,11 @@ async function loadReleases(){
     if(!releases.length){latest.innerHTML="";latest.classList.add("hidden");empty.classList.remove("hidden");return;}
     latest.classList.remove("hidden");
     const first=releases[0],asset=releaseAsset(first),sha=shaFromBody(first.body||"");
-    latest.innerHTML=`<div class="latest-layout"><div><div class="latest-label">LATEST RELEASE</div><h2>${esc(first.name||first.tag_name)}</h2><div class="latest-meta"><span>${fmtDate(first.published_at||first.created_at)}</span>${asset?`<span>${fmtBytes(asset.size)}</span><span>${asset.download_count.toLocaleString()} downloads</span>`:""}${sha?`<span>SHA-1 ${sha.slice(0,10)}…</span>`:""}</div><div class="latest-notes">${esc(notesPreview(first.body||"Official WorldForge resource pack release."))}</div></div><div>${asset?`<a class="primary download-main" href="${asset.browser_download_url}">Download latest ↓</a>`:'<span class="secondary">No ZIP asset</span>'}</div></div>`;
+    latest.innerHTML=`<div class="latest-layout"><div><div class="latest-label">LATEST RELEASE</div><h2>${esc(first.name||first.tag_name)}</h2><div class="latest-meta"><span>${fmtDate(first.published_at||first.created_at)}</span>${asset?`<span>${fmtBytes(asset.size)}</span><span>${asset.download_count.toLocaleString()} downloads</span>`:""}${sha?`<span>SHA-1 ${sha}</span>`:`<span>SHA-1 not listed</span>`}</div><div class="latest-notes">${esc(notesPreview(first.body||"Official WorldForge resource pack release."))}</div></div><div class="latest-actions">${releaseActionsHtml(asset,sha,true)}</div></div>`;
     for(const rel of releases){
       const a=releaseAsset(rel),row=document.createElement("div");row.className="release-row";
-      row.innerHTML=`<div class="release-tag">${esc(rel.tag_name)}</div><div class="release-main"><strong>${esc(rel.name||rel.tag_name)}</strong><small>${a?esc(a.name):"No ZIP asset attached"}</small></div><div class="release-size">${a?fmtBytes(a.size):"—"}</div><div class="release-date">${fmtDate(rel.published_at||rel.created_at)}</div><div class="release-actions">${a?`<a href="${a.browser_download_url}">Download</a>`:""}</div>`;
+      const relSha=shaFromBody(rel.body||"");
+      row.innerHTML=`<div class="release-tag">${esc(rel.tag_name)}</div><div class="release-main"><strong>${esc(rel.name||rel.tag_name)}</strong><small>${a?esc(a.name):"No ZIP asset attached"}${relSha?` • SHA-1 ${relSha.slice(0,10)}…`:""}</small></div><div class="release-size">${a?fmtBytes(a.size):"—"}</div><div class="release-date">${fmtDate(rel.published_at||rel.created_at)}</div><div class="release-actions">${releaseActionsHtml(a,relSha,false)}</div>`;
       list.append(row);
     }
   }catch(e){
