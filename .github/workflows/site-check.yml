@@ -1,0 +1,23 @@
+name: Static Site Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: JavaScript syntax
+        run: node --check app.js
+      - name: Required site files
+        run: |
+          test -f index.html
+          test -f styles.css
+          test -f app.js
+          grep -q "WorldForge Resource Merger" index.html
