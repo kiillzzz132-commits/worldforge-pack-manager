@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WorldForge Pack Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">WORLDFORGE TOOLING</div>
+        <h1>Pack Manager</h1>
+        <p>Merge two complete Minecraft resource packs, validate the result, calculate its SHA-1, and publish it.</p>
+      </div>
+      <div class="status-pill"><span class="dot"></span> WEB APP</div>
+    </header>
+
+    <section class="panel">
+      <div class="section-head">
+        <div><span class="step">01</span><h2>Choose complete packs</h2></div>
+        <button class="ghost" id="clearBtn">Clear</button>
+      </div>
+
+      <div class="drop-grid">
+        <label class="dropzone" id="oldDrop">
+          <input type="file" id="oldPack" accept=".zip,application/zip" hidden>
+          <div class="drop-icon">↓</div>
+          <strong>Older complete pack</strong>
+          <span>Drop the full existing resource pack here</span>
+          <small id="oldName">No file selected</small>
+        </label>
+        <div class="plus">+</div>
+        <label class="dropzone" id="newDrop">
+          <input type="file" id="newPack" accept=".zip,application/zip" hidden>
+          <div class="drop-icon">↑</div>
+          <strong>Newer complete pack</strong>
+          <span>Drop the full newer resource pack here</span>
+          <small id="newName">No file selected</small>
+        </label>
+      </div>
+
+      <button class="primary wide" id="analyzeBtn">Analyze merge</button>
+      <div class="progress hidden" id="progress"><div></div></div>
+      <p class="error hidden" id="errorBox"></p>
+    </section>
+
+    <section class="panel hidden" id="reviewPanel">
+      <div class="section-head">
+        <div><span class="step">02</span><h2>Review changes</h2></div>
+        <div class="safe-badge">Minecraft-aware merge</div>
+      </div>
+
+      <div class="stats" id="stats"></div>
+      <div class="merge-note"><strong>Smart merge:</strong> fonts, sounds, language JSON, atlases, tags and pack.mcmeta are merged. Other changed duplicate files use the newer pack by default.</div>
+
+      <div id="conflictWrap" class="hidden">
+        <h3>File conflicts</h3>
+        <div class="conflicts" id="conflicts"></div>
+      </div>
+
+      <button class="primary wide" id="buildBtn">Build merged pack</button>
+    </section>
+
+    <section class="panel result-panel hidden" id="resultPanel">
+      <div class="success-mark">✓</div>
+      <div class="eyebrow">BUILD COMPLETE</div>
+      <h2 id="resultTitle">WorldForge Pack</h2>
+      <p class="subtle" id="resultMeta"></p>
+
+      <div class="output-row">
+        <label>Pack URL</label>
+        <div class="copybox"><input id="urlOut" readonly><button data-copy="urlOut">Copy</button></div>
+        <small id="urlHint"></small>
+      </div>
+      <div class="output-row">
+        <label>SHA-1</label>
+        <div class="copybox"><input id="shaOut" readonly><button data-copy="shaOut">Copy</button></div>
+      </div>
+      <div class="output-row">
+        <label>server.properties</label>
+        <div class="copybox area"><textarea id="propsOut" readonly></textarea><button data-copy="propsOut">Copy</button></div>
+      </div>
+
+      <div class="result-actions">
+        <a class="primary" id="downloadBtn" href="#">Download pack</a>
+        <button class="ghost" id="newMergeBtn">New merge</button>
+      </div>
+      <p class="warning hidden" id="publishWarning"></p>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div><span class="step">03</span><h2>Version history</h2></div>
+        <button class="ghost" id="refreshHistory">Refresh</button>
+      </div>
+      <div id="history" class="history"><div class="empty">No builds yet.</div></div>
+    </section>
+
+    <footer>
+      <span>WorldForge Pack Manager</span>
+      <span>Two complete packs in • one merged resource pack out</span>
+    </footer>
+  </main>
+  <script>window.WF_PUBLISHING_ENABLED = {{ 'true' if publishing_enabled else 'false' }};</script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
