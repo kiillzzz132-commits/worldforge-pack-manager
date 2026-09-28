@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+config.json
+.env
+data/tmp/*
+data/builds/*
+data/history.json
+!data/tmp/.gitkeep
+!data/builds/.gitkeep
